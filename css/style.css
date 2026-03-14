@@ -20,10 +20,42 @@ body {
     text-align:center;
 }
 
-input{
+/* input{
     width:100%;
     padding:10px;
     margin:10px 0;
+} */
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block; /* Forces a new line */
+    box-sizing: border-box; /* Ensures padding doesn't push it out of the container */
+}
+input[type="text"], 
+input[type="password"], 
+select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    box-sizing: border-box;
+}
+
+input[type="file"] {
+    width: auto; /* This prevents the click area from spreading across the line */
+    padding: 5px 0;
+    margin: 10px 0;
+    display: block;
+    cursor: pointer;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: left;
 }
 
 button{
