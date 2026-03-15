@@ -1,3 +1,8 @@
+// 1. Initialize Supabase
+const _supabaseURL = "https://wtenziybnqmuevjwoami.supabase.co";
+const _supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0ZW56aXlibnFtdWV2andvYW1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MTE2NDQsImV4cCI6MjA4OTA4NzY0NH0.MSaxuJc7LbX0KR-NpD_XLiO5xxl1fPHpPpv9v9MpCr0";
+const _supabase = supabase.createClient(_supabaseURL, _supabaseKey);
+
 let sortAscending = true;
 
 function login() {
@@ -155,50 +160,97 @@ window.onload = function () {
 //   }
 // }
 
-function addCase() {
-  let caseNumber = document.getElementById("caseNumber").value;
-  let department = document.getElementById("department").value;
-  let hearingDate = document.getElementById("hearingDate").value;
+// function addCase() {
+//   let caseNumber = document.getElementById("caseNumber").value;
+//   let department = document.getElementById("department").value;
+//   let hearingDate = document.getElementById("hearingDate").value;
 
-  // --- UPDATED VALIDATION BLOCK ---
-  if (!caseNumber.trim()) {
-    alert("Please enter a Case Number.");
-    return;
-  }
+//   // --- UPDATED VALIDATION BLOCK ---
+//   if (!caseNumber.trim()) {
+//     alert("Please enter a Case Number.");
+//     return;
+//   }
   
-  if (!hearingDate.trim()) {
-    alert("Please select a Hearing Date.");
-    return;
-  }
-  // --------------------------------
+//   if (!hearingDate.trim()) {
+//     alert("Please select a Hearing Date.");
+//     return;
+//   }
+//   // --------------------------------
 
-  let fileInput = document.getElementById("caseFile");
-  let file = fileInput.files[0];
+//   let fileInput = document.getElementById("caseFile");
+//   let file = fileInput.files[0];
 
-  let reader = new FileReader();
+//   let reader = new FileReader();
 
-  reader.onload = function (e) {
-    let caseData = {
-      number: caseNumber,
-      department: department,
-      date: hearingDate,
-      fileName: file ? file.name : "No File",
-      fileData: file ? e.target.result : null,
-    };
+//   reader.onload = function (e) {
+//     let caseData = {
+//       number: caseNumber,
+//       department: department,
+//       date: hearingDate,
+//       fileName: file ? file.name : "No File",
+//       fileData: file ? e.target.result : null,
+//     };
 
-    let cases = JSON.parse(localStorage.getItem("cases")) || [];
-    cases.push(caseData);
-    localStorage.setItem("cases", JSON.stringify(cases));
+//     let cases = JSON.parse(localStorage.getItem("cases")) || [];
+//     cases.push(caseData);
+//     localStorage.setItem("cases", JSON.stringify(cases));
 
-    alert("Case Added Successfully");
-    window.location.href = "dashboard.html";
-  };
+//     alert("Case Added Successfully");
+//     window.location.href = "dashboard.html";
+//   };
 
-  if (file) {
-    reader.readAsDataURL(file);
-  } else {
-    reader.onload({ target: { result: null } });
-  }
+//   if (file) {
+//     reader.readAsDataURL(file);
+//   } else {
+//     reader.onload({ target: { result: null } });
+//   }
+// }
+
+// 2. Function to Add Case to Supabase
+// 2. Function to Add Case to Supabase
+async function addCase() {
+    const caseNumber = document.getElementById("caseNumber").value;
+    const department = document.getElementById("department").value;
+    const hearingDate = document.getElementById("hearingDate").value;
+    const fileInput = document.getElementById("caseFile");
+    const file = fileInput.files[0];
+
+    if (!caseNumber || !hearingDate) {
+        alert("Please fill in Case Number and Date");
+        return;
+    }
+
+    let fileData = null;
+    let fileName = "No File";
+
+    if (file) {
+        fileName = file.name;
+        // Convert file to Base64 to store in text column
+        fileData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Insert into Supabase
+    const { data, error } = await _supabase
+        .from('cases')
+        .insert([{ 
+            case_number: caseNumber, 
+            department: department, 
+            hearing_date: hearingDate, 
+            file_name: fileName, 
+            file_data: fileData 
+        }]);
+
+    if (error) {
+        console.error("Error:", error);
+        alert("Upload Failed: " + error.message);
+    } else {
+        alert("Case Saved to Cloud successfully!");
+        window.location.href = "dashboard.html";
+    }
 }
 
 window.addEventListener("load", function () {
@@ -268,17 +320,60 @@ window.addEventListener("load", function () {
     }
   });
 });
-function deleteCase(index) {
-  let cases = JSON.parse(localStorage.getItem("cases")) || [];
 
-  cases.splice(index, 1);
+// 3. Function to Fetch Cases for Dashboard
+async function loadDashboard() {
+    const { data: cases, error } = await _supabase
+        .from('cases')
+        .select('*')
+        .order('hearing_date', { ascending: true });
 
-  localStorage.setItem("cases", JSON.stringify(cases));
+    if (error) {
+        console.error("Error fetching:", error);
+        return;
+    }
 
-  location.reload();
+    const tableBody = document.getElementById("caseTableBody");
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = ""; // Clear current rows
+
+    cases.forEach((c, index) => {
+        const row = `<tr>
+            <td>${index + 1}</td>
+            <td>${c.case_number}</td>
+            <td>${c.department}</td>
+            <td>${c.hearing_date}</td>
+            <td>${c.file_name !== "No File" ? `<a href="${c.file_data}" download="${c.file_name}">Download</a>` : "No File"}</td>
+            <td><button onclick="deleteCase(${c.id})" style="background:red; color:white;">Delete</button></td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
 }
-function closePopup() {
-  document.getElementById("hearingPopup").style.display = "none";
+
+// function deleteCase(index) {
+//   let cases = JSON.parse(localStorage.getItem("cases")) || [];
+
+//   cases.splice(index, 1);
+
+//   localStorage.setItem("cases", JSON.stringify(cases));
+
+//   location.reload();
+// }
+// function closePopup() {
+//   document.getElementById("hearingPopup").style.display = "none";
+// }
+
+async function deleteCase(id) {
+    if (confirm("Are you sure you want to delete this case?")) {
+        const { error } = await _supabase
+            .from('cases')
+            .delete()
+            .eq('id', id);
+        
+        if (error) alert("Delete failed");
+        else loadDashboard(); // Refresh table
+    }
 }
 
 function searchCase() {
