@@ -33,12 +33,16 @@
     <div class="container">
       <h3>Case Dashboard</h3>
 
-      <input 
-type="text" 
-id="searchCase" 
-placeholder="Search by Case Number..."
-onkeyup="searchCase()" 
-style="margin-bottom:15px; padding:8px; width:250px;">
+      <!-- <input type="text" id="searchCase" placeholder="Search by Case Number..."onkeyup="searchCase()" 
+style="margin-bottom:15px; padding:8px; width:250px;"> -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <input type="text" id="searchCase" placeholder="Search by Case Number..." onkeyup="searchCase()" 
+                style="padding:8px; width:250px; border: 1px solid #ccc; border-radius: 4px;">
+
+          <button onclick="downloadExcel()" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">
+              📊 Download Sheet
+          </button>
+      </div>
 
       <table>
         <thead>
@@ -61,11 +65,12 @@ Hearing Date ⬍
       </table>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="js/app.js"></script>
     <footer>
 
 <p>
-District Court Monitoring System, Amroha | Developed for Administrative Use
+District Court Monitoring System, Amroha | Developed By NIC, 2026
 </p>
 
 </footer>
