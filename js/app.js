@@ -192,10 +192,59 @@ async function addCase() {
     }
 }
 
+// async function loadUpcomingPage() {
+//     const upcomingTable = document.getElementById("upcomingTable");
+//     if (!upcomingTable) return;
+
+//     const { data: cases, error } = await _supabase
+//         .from('cases')
+//         .select('*')
+//         .order('hearing_date', { ascending: true });
+
+//     if (error) {
+//         console.error("Supabase Error:", error);
+//         return;
+//     }
+
+//     upcomingTable.innerHTML = ""; // Clear table
+//     let today = new Date();
+
+//     cases.forEach((c) => {
+//         let hearing = parseIndianDate(c.hearing_date);
+//         let diffDays = Math.ceil((hearing - today) / (1000 * 60 * 60 * 24));
+
+//         // Show cases for the next 7 days
+//         if (diffDays <= 7 && diffDays >= 0) {
+//             const statusText = diffDays === 0 ? "⚠ Today" : (diffDays === 1 ? "⚠ Tomorrow" : `In ${diffDays} days`);
+//             const statusColor = diffDays <= 1 ? "red" : "orange";
+
+//             // We build the entire row at once to ensure the Download button is included
+//             const row = `
+//                 <tr>
+//                     <td>${c.case_number}</td>
+//                     <td>${c.department}</td>
+//                     <td>${c.hearing_date}</td>
+//                     <td>
+//                         ${c.file_data ? `
+//                             <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+//                                 <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
+//                                 <span style="color: #ccc;">|</span>
+//                                 <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
+//                             </div>` : "No File"}
+//                     </td>
+//                     <td style="color:${statusColor}; font-weight:bold;">${statusText}</td>
+//                 </tr>`;
+            
+//             upcomingTable.innerHTML += row;
+//         }
+//     });
+// }
+
 async function loadUpcomingPage() {
     const upcomingTable = document.getElementById("upcomingTable");
     if (!upcomingTable) return;
 
+    // 1. Fetch data
     const { data: cases, error } = await _supabase
         .from('cases')
         .select('*')
@@ -206,19 +255,31 @@ async function loadUpcomingPage() {
         return;
     }
 
+    // 2. Setup Stat Elements
+    const totalCasesEl = document.getElementById("totalCases");
+    const upcomingCountEl = document.getElementById("upcomingCount");
+    if (totalCasesEl) totalCasesEl.innerText = cases.length;
+
     upcomingTable.innerHTML = ""; // Clear table
     let today = new Date();
+    today.setHours(0, 0, 0, 0); // Zero out time for accuracy
+
+    let upcomingCount = 0;
 
     cases.forEach((c) => {
         let hearing = parseIndianDate(c.hearing_date);
-        let diffDays = Math.ceil((hearing - today) / (1000 * 60 * 60 * 24));
+        if (hearing) hearing.setHours(0, 0, 0, 0);
 
-        // Show cases for the next 7 days
+        let diffTime = hearing.getTime() - today.getTime();
+        let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        // Logic for the stats and the table
         if (diffDays <= 7 && diffDays >= 0) {
+            upcomingCount++; // Increment for the stat box
+            
             const statusText = diffDays === 0 ? "⚠ Today" : (diffDays === 1 ? "⚠ Tomorrow" : `In ${diffDays} days`);
             const statusColor = diffDays <= 1 ? "red" : "orange";
 
-            // We build the entire row at once to ensure the Download button is included
             const row = `
                 <tr>
                     <td>${c.case_number}</td>
@@ -238,8 +299,10 @@ async function loadUpcomingPage() {
             upcomingTable.innerHTML += row;
         }
     });
-}
 
+    // 3. Update the upcoming count box
+    if (upcomingCountEl) upcomingCountEl.innerText = upcomingCount;
+}
 
 async function loadDashboard() {
     const { data: cases, error } = await _supabase

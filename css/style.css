@@ -244,3 +244,13 @@ footer p {
 
 /* Ensure the dashboard heading and search bar have no extra left spacing */
 /*  */
+.card.upcoming-card {
+    background-color: #ff4d4d !important; /* NIC Warning Red */
+    color: white !important;              /* Makes text white */
+    border: none;
+}
+
+.card.upcoming-card h4, 
+.card.upcoming-card p {
+    color: white !important;
+}
