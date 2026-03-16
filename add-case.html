@@ -28,8 +28,8 @@
       <input 
           type="text" 
           id="caseNumber" 
-          oninput="this.value = this.value.replace(/[^0-9]/g, '');" 
-          placeholder="Enter numeric case number" 
+          oninput="this.value = this.value.replace(/[^0-9/]/g, '');" 
+          placeholder="e.g. 123/2024" 
           required 
       />
 
@@ -101,7 +101,7 @@
     <script src="config.js"></script>
     <script src="js/app.js"></script>
     <footer>
-      <p>District Court Monitoring System, Amroha | Developed By NIC, 2026</p>
+      <p>District Court Monitoring System, Amroha | Developed By NIC | 2026</p>
     </footer>
     <script>
     flatpickr("#hearingDate", {
