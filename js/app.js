@@ -45,119 +45,65 @@ window.onload = function () {
     }
 };
 
-// function addCase() {
-//   let caseNumber = document.getElementById("caseNumber").value;
-//   let department = document.getElementById("department").value;
-//   let hearingDate = document.getElementById("hearingDate").value;
-
-//   let fileInput = document.getElementById("caseFile");
-//   let file = fileInput.files[0];
-
-//   let reader = new FileReader();
-
-//   reader.onload = function (e) {
-//     let caseData = {
-//       number: caseNumber,
-//       department: department,
-//       date: hearingDate,
-//       fileName: file ? file.name : "No File",
-//       fileData: file ? e.target.result : null,
-//     };
-
-//     let cases = JSON.parse(localStorage.getItem("cases")) || [];
-
-//     cases.push(caseData);
-
-//     localStorage.setItem("cases", JSON.stringify(cases));
-
-//     alert("Case Added Successfully");
-
-//     window.location.href = "dashboard.html";
-//   };
-
-//   if (file) {
-//     reader.readAsDataURL(file);
-//   } else {
-//     reader.onload({ target: { result: null } });
-//   }
-// }
-
-// function addCase() {
-//   let caseNumber = document.getElementById("caseNumber").value;
-//   let department = document.getElementById("department").value;
-//   let hearingDate = document.getElementById("hearingDate").value;
-
-//   // --- UPDATED VALIDATION BLOCK ---
-//   if (!caseNumber.trim()) {
-//     alert("Please enter a Case Number.");
-//     return;
-//   }
-  
-//   if (!hearingDate.trim()) {
-//     alert("Please select a Hearing Date.");
-//     return;
-//   }
-//   // --------------------------------
-
-//   let fileInput = document.getElementById("caseFile");
-//   let file = fileInput.files[0];
-
-//   let reader = new FileReader();
-
-//   reader.onload = function (e) {
-//     let caseData = {
-//       number: caseNumber,
-//       department: department,
-//       date: hearingDate,
-//       fileName: file ? file.name : "No File",
-//       fileData: file ? e.target.result : null,
-//     };
-
-//     let cases = JSON.parse(localStorage.getItem("cases")) || [];
-//     cases.push(caseData);
-//     localStorage.setItem("cases", JSON.stringify(cases));
-
-//     alert("Case Added Successfully");
-//     window.location.href = "dashboard.html";
-//   };
-
-//   if (file) {
-//     reader.readAsDataURL(file);
-//   } else {
-//     reader.onload({ target: { result: null } });
-//   }
-// }
 
 // 2. Function to Add Case to Supabase
 // 2. Function to Add Case to Supabase
 async function addCase() {
-    // const caseNumber = document.getElementById("caseNumber").value;
-    // const department = document.getElementById("department").value;
-    // const hearingDate = document.getElementById("hearingDate").value;
-    // const fileInput = document.getElementById("caseFile");
-    // const file = fileInput.files[0];
 
-    // if (!caseNumber || !hearingDate) {
-    //     alert("Please fill in Case Number and Date");
-    //     return;
-    // }
-    const caseNumber = document.getElementById("caseNumber").value;
-    const department = document.getElementById("department").value;
+    const caseNumber = document.getElementById("caseNumber").value.trim();
+    let department = document.getElementById("department").value;
+    const otherDeptName = document.getElementById("otherDeptName").value.trim();
+    let courtType = document.getElementById("courtType").value;
+    const otherCourtName = document.getElementById("otherCourtName").value.trim();
     const hearingDate = document.getElementById("hearingDate").value;
+
     const fileInput = document.getElementById("caseFile");
     const file = fileInput.files[0];
 
-    // --- NEW NUMERIC VALIDATION ---
     // This checks if the case number contains ONLY digits (0-9) and /
     if (!/^[0-9/]+$/.test(caseNumber)) {
         alert("Please enter a valid Case Number (Numbers and / only).");
         return;
     }
 
-    if (!caseNumber || !hearingDate) {
-        alert("Please fill in Case Number and Date");
+
+    if (!caseNumber) {
+        alert("Please enter the Case Number.");
         return;
     }
+
+    // 2. Check Department
+    if (!department) {
+        alert("Please select a Department.");
+        return;
+    }
+    if (department === "Others") {
+        if (!otherDeptName) {
+            alert("Please specify the Department Name.");
+            return;
+        }
+        department = otherDeptName; // Use the manual text for the database
+    }
+
+    // 3. Check Court
+    if (!courtType) {
+        alert("Please select a Court.");
+        return;
+    }
+    if (courtType === "Others") {
+        if (!otherCourtName) {
+            alert("Please specify the Court Name.");
+            return;
+        }
+        courtType = otherCourtName; // Use the manual text for the database
+    }
+
+    // 4. Check Date
+    if (!hearingDate) {
+        alert("Please select a Next Hearing Date.");
+        return;
+    }
+
 
     let fileData = null;
     let fileName = "No File";
@@ -178,7 +124,8 @@ async function addCase() {
         .insert([{ 
             case_number: caseNumber, 
             department: department, 
-            hearing_date: hearingDate, 
+            hearing_date: hearingDate,
+            court_type: courtType, 
             file_name: fileName, 
             file_data: fileData 
         }]);
@@ -192,53 +139,6 @@ async function addCase() {
     }
 }
 
-// async function loadUpcomingPage() {
-//     const upcomingTable = document.getElementById("upcomingTable");
-//     if (!upcomingTable) return;
-
-//     const { data: cases, error } = await _supabase
-//         .from('cases')
-//         .select('*')
-//         .order('hearing_date', { ascending: true });
-
-//     if (error) {
-//         console.error("Supabase Error:", error);
-//         return;
-//     }
-
-//     upcomingTable.innerHTML = ""; // Clear table
-//     let today = new Date();
-
-//     cases.forEach((c) => {
-//         let hearing = parseIndianDate(c.hearing_date);
-//         let diffDays = Math.ceil((hearing - today) / (1000 * 60 * 60 * 24));
-
-//         // Show cases for the next 7 days
-//         if (diffDays <= 7 && diffDays >= 0) {
-//             const statusText = diffDays === 0 ? "⚠ Today" : (diffDays === 1 ? "⚠ Tomorrow" : `In ${diffDays} days`);
-//             const statusColor = diffDays <= 1 ? "red" : "orange";
-
-//             // We build the entire row at once to ensure the Download button is included
-//             const row = `
-//                 <tr>
-//                     <td>${c.case_number}</td>
-//                     <td>${c.department}</td>
-//                     <td>${c.hearing_date}</td>
-//                     <td>
-//                         ${c.file_data ? `
-//                             <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-//                                 <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
-//                                 <span style="color: #ccc;">|</span>
-//                                 <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
-//                             </div>` : "No File"}
-//                     </td>
-//                     <td style="color:${statusColor}; font-weight:bold;">${statusText}</td>
-//                 </tr>`;
-            
-//             upcomingTable.innerHTML += row;
-//         }
-//     });
-// }
 
 async function loadUpcomingPage() {
     const upcomingTable = document.getElementById("upcomingTable");
@@ -284,14 +184,12 @@ async function loadUpcomingPage() {
                 <tr>
                     <td>${c.case_number}</td>
                     <td>${c.department}</td>
-                    <td>${c.hearing_date}</td>
-                    <td>
-                        ${c.file_data ? `
-                            <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-                                <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
-                                <span style="color: #ccc;">|</span>
-                                <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
-                            </div>` : "No File"}
+                    <td>${c.hearing_date || "N/A"}</td> <td>${c.court_type || "N/A"}</td>   <td>
+                        ${c.file_data ? `<div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                            <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
+                            <span style="color: #ccc;">|</span>
+                            <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
+                        </div>` : "No File"}
                     </td>
                     <td style="color:${statusColor}; font-weight:bold;">${statusText}</td>
                 </tr>`;
@@ -342,17 +240,18 @@ async function loadDashboard() {
         let statusText = diffDays < 0 ? "Passed" : (diffDays === 0 ? "⚠ Today" : (diffDays === 1 ? "⚠ Tomorrow" : "Scheduled"));
         let statusColor = diffDays <= 1 && diffDays >= 0 ? "red" : (diffDays < 0 ? "gray" : "#1F4E79");
 
+
+        // Inside loadDashboard loop
         const row = `<tr>
             <td>${c.case_number}</td>
             <td>${c.department}</td>
-            <td>${c.hearing_date}</td>
-            <td>
-                ${c.file_data ? `
-                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-                        <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
-                        <span style="color: #ccc;">|</span>
-                        <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
-                    </div>` : "No File"}
+            <td>${c.hearing_date || "N/A"}</td>
+            <td>${c.court_type || "N/A"}</td> <td>
+                ${c.file_data ? `<div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                    <span onclick="viewFileCloud('${c.file_data}')" style="cursor:pointer; color:#1F4E79; font-weight:bold;">View</span>
+                    <span style="color: #ccc;">|</span>
+                    <a href="${c.file_data}" download="${c.file_name || 'CaseFile.pdf'}" style="text-decoration: none; color: #28a745; font-weight: bold;">Download</a>
+                </div>` : "No File"}
             </td>
             <td>
                 <input type="text" id="remarks-${c.id}" value="${c.remarks || ""}" style="width:100px;">
@@ -510,27 +409,139 @@ function parseIndianDate(dateStr) {
     return new Date(dateStr);
 }
 
+// function downloadExcel() {
+//     // Identify which table we are looking at
+//     const tableBody = document.getElementById("caseTable") || document.getElementById("upcomingTable");
+//     const tableHeader = document.querySelector("thead");
+
+//     if (!tableBody || tableBody.rows.length === 0) {
+//         alert("No data available!");
+//         return;
+//     }
+
+//     let csvRows = [];
+//     const isUpcomingPage = !!document.getElementById("upcomingTable");
+
+//     // 1. Set Headers based on the page
+//     let headers = isUpcomingPage 
+//         ? ["Case Number", "Department", "Court", "Hearing Date", "Status"]
+//         : ["Case Number", "Department", "Court", "Hearing Date", "Remarks", "Status"];
+    
+//     csvRows.push(headers.map(h => `"${h}"`).join(","));
+
+//     // 2. Get Row Data
+//     const rows = tableBody.querySelectorAll("tr");
+//     rows.forEach(tr => {
+//         if (tr.style.display === "none") return; 
+
+//         let rowData = [];
+//         const cells = tr.querySelectorAll("td");
+
+//         if (isUpcomingPage) {
+//             // Upcoming Page Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Status
+//             rowData.push(`"${cells[0].innerText.trim()}"`);
+//             rowData.push(`"${cells[1].innerText.trim()}"`);
+//             rowData.push(`"${cells[2].innerText.trim()}"`);
+//             let statusVal = cells[4] ? cells[4].innerText.replace("⚠ ", "").trim() : "";
+//             rowData.push(`"${statusVal}"`);
+//         } else {
+//             // Dashboard Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Remarks, 5:Status
+//             rowData.push(`"${cells[0].innerText.trim()}"`);
+//             rowData.push(`"${cells[1].innerText.trim()}"`);
+//             rowData.push(`"${cells[2].innerText.trim()}"`);
+            
+//             const remarkInput = cells[4].querySelector("input");
+//             let remarkVal = remarkInput ? remarkInput.value : cells[4].innerText;
+//             rowData.push(`"${remarkVal.replace(/"/g, '""').trim()}"`);
+            
+//             let statusVal = cells[5] ? cells[5].innerText.replace("⚠ ", "").trim() : "";
+//             rowData.push(`"${statusVal}"`);
+//         }
+
+//         csvRows.push(rowData.join(","));
+//     });
+
+//     // 3. Trigger Download
+//     const csvString = csvRows.join("\n");
+//     const blob = new Blob(["\ufeff", csvString], { type: "text/csv;charset=utf-8;" });
+//     const url = URL.createObjectURL(blob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.download = isUpcomingPage ? `Upcoming_Hearings_${new Date().toLocaleDateString()}.csv` : `Case_Dashboard_${new Date().toLocaleDateString()}.csv`;
+    
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);
+//     URL.revokeObjectURL(url);
+// }
+
+// function downloadExcel() {
+//     const tableBody = document.getElementById("caseTable") || document.getElementById("upcomingTable");
+//     if (!tableBody || tableBody.rows.length === 0) return;
+
+//     let csvRows = [];
+//     const isUpcomingPage = !!document.getElementById("upcomingTable");
+    
+//     // Headers
+//     let headers = isUpcomingPage 
+//         ? ["Case Number", "Department", "Court", "Hearing Date", "Status"]
+//         : ["Case Number", "Department", "Hearing Date", "Court", "Remarks", "Status"];
+//     csvRows.push(headers.map(h => `"${h}"`).join(","));
+
+//     const rows = tableBody.querySelectorAll("tr");
+//     rows.forEach(tr => {
+//         if (tr.style.display === "none") return; 
+//         let rowData = [];
+//         const cells = tr.querySelectorAll("td");
+
+//         // THE FIX FOR 09/7: Using ="value" format
+//         rowData.push(`="${cells[0].innerText.trim()}"`); // Case Number is now safe
+        
+//         rowData.push(`"${cells[1].innerText.trim()}"`); // Department
+
+//         if (isUpcomingPage) {
+//             rowData.push(`"${cells[2].innerText.trim()}"`); // Court
+//             rowData.push(`"${cells[3].innerText.trim()}"`); // Date
+//             let statusVal = cells[5] ? cells[5].innerText.replace("⚠ ", "").trim() : "";
+//             rowData.push(`"${statusVal}"`);
+//         } else {
+//             rowData.push(`"${cells[2].innerText.trim()}"`); // Date
+//             rowData.push(`"${cells[3].innerText.trim()}"`); // Court
+//             const remarkInput = cells[5].querySelector("input");
+//             let remarkVal = remarkInput ? remarkInput.value : cells[5].innerText;
+//             rowData.push(`"${remarkVal.replace(/"/g, '""').trim()}"`);
+//             let statusVal = cells[6] ? cells[6].innerText.replace("⚠ ", "").trim() : "";
+//             rowData.push(`"${statusVal}"`);
+//         }
+//         csvRows.push(rowData.join(","));
+//     });
+
+//     const csvString = csvRows.join("\n");
+//     const blob = new Blob(["\ufeff", csvString], { type: "text/csv;charset=utf-8;" });
+//     const url = URL.createObjectURL(blob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.download = `Case_Report_${new Date().toLocaleDateString()}.csv`;
+//     link.click();
+// }
 function downloadExcel() {
-    // Identify which table we are looking at
-    const tableBody = document.getElementById("caseTable") || document.getElementById("upcomingTable");
-    const tableHeader = document.querySelector("thead");
+    const isUpcomingPage = !!document.getElementById("upcomingTable");
+    const tableBody = isUpcomingPage ? document.getElementById("upcomingTable") : (document.getElementById("caseTableBody") || document.getElementById("caseTable"));
 
     if (!tableBody || tableBody.rows.length === 0) {
-        alert("No data available!");
+        alert("No data to download!");
         return;
     }
 
     let csvRows = [];
-    const isUpcomingPage = !!document.getElementById("upcomingTable");
-
-    // 1. Set Headers based on the page
+    
+    // Standardized Headers for both pages
     let headers = isUpcomingPage 
-        ? ["Case Number", "Department", "Hearing Date", "Status"]
-        : ["Case Number", "Department", "Hearing Date", "Remarks", "Status"];
+        ? ["Case Number", "Department", "Hearing Date", "Court", "Status"]
+        : ["Case Number", "Department", "Hearing Date", "Court", "Remarks", "Status"];
     
     csvRows.push(headers.map(h => `"${h}"`).join(","));
 
-    // 2. Get Row Data
     const rows = tableBody.querySelectorAll("tr");
     rows.forEach(tr => {
         if (tr.style.display === "none") return; 
@@ -538,45 +549,44 @@ function downloadExcel() {
         let rowData = [];
         const cells = tr.querySelectorAll("td");
 
+        // 1. Case Number (The "09/7" Fix)
+        rowData.push(`="${cells[0].innerText.trim()}"`); 
+        
+        // 2. Department
+        rowData.push(`"${cells[1].innerText.trim()}"`); 
+        
+        // 3. Hearing Date
+        rowData.push(`"${cells[2].innerText.trim()}"`); 
+        
+        // 4. Court
+        rowData.push(`"${cells[3].innerText.trim()}"`); 
+
         if (isUpcomingPage) {
-            // Upcoming Page Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Status
-            rowData.push(`"${cells[0].innerText.trim()}"`);
-            rowData.push(`"${cells[1].innerText.trim()}"`);
-            rowData.push(`"${cells[2].innerText.trim()}"`);
-            let statusVal = cells[4] ? cells[4].innerText.replace("⚠ ", "").trim() : "";
+            // 5. Status (Upcoming Page)
+            let statusVal = cells[5] ? cells[5].innerText.replace("⚠ ", "").trim() : "";
             rowData.push(`"${statusVal}"`);
         } else {
-            // Dashboard Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Remarks, 5:Status
-            rowData.push(`"${cells[0].innerText.trim()}"`);
-            rowData.push(`"${cells[1].innerText.trim()}"`);
-            rowData.push(`"${cells[2].innerText.trim()}"`);
-            
-            const remarkInput = cells[4].querySelector("input");
-            let remarkVal = remarkInput ? remarkInput.value : cells[4].innerText;
+            // 5. Remarks (Dashboard Page)
+            const remarkInput = cells[5].querySelector("input");
+            let remarkVal = remarkInput ? remarkInput.value : cells[5].innerText;
             rowData.push(`"${remarkVal.replace(/"/g, '""').trim()}"`);
             
-            let statusVal = cells[5] ? cells[5].innerText.replace("⚠ ", "").trim() : "";
+            // 6. Status (Dashboard Page)
+            let statusVal = cells[6] ? cells[6].innerText.replace("⚠ ", "").trim() : "";
             rowData.push(`"${statusVal}"`);
         }
 
         csvRows.push(rowData.join(","));
     });
 
-    // 3. Trigger Download
     const csvString = csvRows.join("\n");
     const blob = new Blob(["\ufeff", csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = isUpcomingPage ? `Upcoming_Hearings_${new Date().toLocaleDateString()}.csv` : `Case_Dashboard_${new Date().toLocaleDateString()}.csv`;
-    
-    document.body.appendChild(link);
+    link.download = `Case_Report_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }
-
-
 function showUrgentAlerts(urgentHearings) {
     const popup = document.getElementById("hearingPopup");
     const hearingList = document.getElementById("hearingList");
@@ -598,5 +608,30 @@ function showUrgentAlerts(urgentHearings) {
         if (popup) {
             popup.style.display = "flex"; // Shows the popup
         }
+    }
+}
+
+function toggleOtherCourt() {
+    const courtSelect = document.getElementById("courtType");
+    const otherDiv = document.getElementById("otherCourtDiv");
+    
+    // Debugging: This will show in your browser console (F12)
+    console.log("Selected Value:", courtSelect.value);
+
+    if (courtSelect.value === "Others") {
+        otherDiv.style.display = "block";
+    } else {
+        otherDiv.style.display = "none";
+    }
+}
+
+function toggleOtherDepartment() {
+    const deptSelect = document.getElementById("department");
+    const otherDeptDiv = document.getElementById("otherDeptDiv");
+    
+    if (deptSelect.value === "Others") {
+        otherDeptDiv.style.display = "block";
+    } else {
+        otherDeptDiv.style.display = "none";
     }
 }

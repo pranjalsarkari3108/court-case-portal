@@ -33,15 +33,9 @@
           required 
       />
 
-      <label>Department</label>
-      <!-- <select id="department">
-        <option>Revenue</option>
-        <option>Police</option>
-        <option>Education</option>
-        <option>Health</option>
-        <option>Public Works</option>
-      </select> -->
-      <select id="department">
+      <label>Department <span style="color: red;">*</span></label>
+
+      <select id="department" onchange="toggleOtherDepartment()">
         <option value="">-- Select Department --</option>
         <option>Agriculture (कृषि विभाग)</option>
         <option>Co-operative (सहकारिता)</option>
@@ -82,7 +76,27 @@
         <option>Urban Development (नगर विकास तथा नगरीय रोजगार एवं गरीबी)</option>
         <option>Women and Child Development (महिला एवं बाल विकास)</option>
         <option>Youth Welfare (युवा कल्याण)</option>
+        <option value="Others">Others (अन्य)</option>
       </select>
+
+      <div id="otherDeptDiv" style="display: none; margin-top: 10px;">
+          <label>Please Specify Department Name <span style="color: red;">*</span></label>
+          <input type="text" id="otherDeptName" placeholder="Enter Department Name">
+      </div>
+
+      <label>Court <span style="color: red;">*</span></label>
+      <select id="courtType" onchange="toggleOtherCourt()" required>
+          <option value="">-- Select Court --</option>
+          <option value="LARA">LARA Court (Land Acquisition, Rehab & Resettlement)</option>
+          <option value="NGT">National Green Tribunal (NGT)</option>
+          <option value="High Court">High Court</option>
+          <option value="Others">Others</option>
+      </select>
+
+      <div id="otherCourtDiv" style="display: none; margin-top: 10px;">
+          <label>Please Specify Court Name <span style="color: red;">*</span></label>
+          <input type="text" id="otherCourtName" placeholder="Enter Court Name">
+      </div>
 
       <!-- <label>Next Hearing Date</label> -->
       <label>Next Hearing Date <span style="color: red;">*</span></label>
