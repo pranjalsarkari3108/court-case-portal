@@ -36,10 +36,18 @@ window.onload = function () {
     }
 
     // If we are on Dashboard
+
     if (document.getElementById("caseTable")) {
-        loadDashboard();
+    // We use .then() to ensure cleanup finishes before we load the dashboard
+        autoCleanupOldCases().then(() => {
+            loadDashboard(); 
+        });
     }
+    // if (document.getElementById("caseTable")) {
+    //     loadDashboard();
+    // }
     // If we are on Upcoming Hearings page
+    
     if (document.getElementById("upcomingTable")) {
         loadUpcomingPage();
     }
@@ -409,71 +417,6 @@ function parseIndianDate(dateStr) {
     return new Date(dateStr);
 }
 
-// function downloadExcel() {
-//     // Identify which table we are looking at
-//     const tableBody = document.getElementById("caseTable") || document.getElementById("upcomingTable");
-//     const tableHeader = document.querySelector("thead");
-
-//     if (!tableBody || tableBody.rows.length === 0) {
-//         alert("No data available!");
-//         return;
-//     }
-
-//     let csvRows = [];
-//     const isUpcomingPage = !!document.getElementById("upcomingTable");
-
-//     // 1. Set Headers based on the page
-//     let headers = isUpcomingPage 
-//         ? ["Case Number", "Department", "Court", "Hearing Date", "Status"]
-//         : ["Case Number", "Department", "Court", "Hearing Date", "Remarks", "Status"];
-    
-//     csvRows.push(headers.map(h => `"${h}"`).join(","));
-
-//     // 2. Get Row Data
-//     const rows = tableBody.querySelectorAll("tr");
-//     rows.forEach(tr => {
-//         if (tr.style.display === "none") return; 
-
-//         let rowData = [];
-//         const cells = tr.querySelectorAll("td");
-
-//         if (isUpcomingPage) {
-//             // Upcoming Page Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Status
-//             rowData.push(`"${cells[0].innerText.trim()}"`);
-//             rowData.push(`"${cells[1].innerText.trim()}"`);
-//             rowData.push(`"${cells[2].innerText.trim()}"`);
-//             let statusVal = cells[4] ? cells[4].innerText.replace("⚠ ", "").trim() : "";
-//             rowData.push(`"${statusVal}"`);
-//         } else {
-//             // Dashboard Structure: 0:Num, 1:Dept, 2:Date, 3:File (Skip), 4:Remarks, 5:Status
-//             rowData.push(`"${cells[0].innerText.trim()}"`);
-//             rowData.push(`"${cells[1].innerText.trim()}"`);
-//             rowData.push(`"${cells[2].innerText.trim()}"`);
-            
-//             const remarkInput = cells[4].querySelector("input");
-//             let remarkVal = remarkInput ? remarkInput.value : cells[4].innerText;
-//             rowData.push(`"${remarkVal.replace(/"/g, '""').trim()}"`);
-            
-//             let statusVal = cells[5] ? cells[5].innerText.replace("⚠ ", "").trim() : "";
-//             rowData.push(`"${statusVal}"`);
-//         }
-
-//         csvRows.push(rowData.join(","));
-//     });
-
-//     // 3. Trigger Download
-//     const csvString = csvRows.join("\n");
-//     const blob = new Blob(["\ufeff", csvString], { type: "text/csv;charset=utf-8;" });
-//     const url = URL.createObjectURL(blob);
-//     const link = document.createElement("a");
-//     link.href = url;
-//     link.download = isUpcomingPage ? `Upcoming_Hearings_${new Date().toLocaleDateString()}.csv` : `Case_Dashboard_${new Date().toLocaleDateString()}.csv`;
-    
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-//     URL.revokeObjectURL(url);
-// }
 
 // function downloadExcel() {
 //     const tableBody = document.getElementById("caseTable") || document.getElementById("upcomingTable");
@@ -633,5 +576,46 @@ function toggleOtherDepartment() {
         otherDeptDiv.style.display = "block";
     } else {
         otherDeptDiv.style.display = "none";
+    }
+}
+
+async function autoCleanupOldCases() {
+    // 1. Fetch all cases to check their dates
+    const { data: cases, error: fetchError } = await _supabase
+        .from('cases')
+        .select('id, hearing_date');
+
+    if (fetchError || !cases) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    // 2. Identify IDs where the date is older than 7 days
+    const idsToDelete = cases
+        .filter(c => {
+            const hearingDate = parseIndianDate(c.hearing_date);
+            // If the date is valid and is older than our 7-day cutoff
+            return hearingDate && hearingDate < sevenDaysAgo;
+        })
+        .map(c => c.id);
+
+    if (idsToDelete.length === 0) {
+        console.log("No old cases to cleanup.");
+        return;
+    }
+
+    // 3. Delete those specific IDs from Supabase
+    const { error: deleteError } = await _supabase
+        .from('cases')
+        .delete()
+        .in('id', idsToDelete); 
+
+    if (deleteError) {
+        console.error("Cleanup Error:", deleteError);
+    } else {
+        console.log(`Successfully cleaned up ${idsToDelete.length} expired cases.`);
     }
 }
